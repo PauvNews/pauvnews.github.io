@@ -1,10 +1,1 @@
-{
-  "brand": {
-    "name": "WEAZEL NEWS",
-    "tagline": "Los Santos haber merkezi"
-  },
-  "featured": null,
-  "articles": [],
-  "issues": [],
-  "updatedAt": null
-}
+{"brand":{"name":"WEAZEL NEWS","tagline":"Los Santos haber merkezi"},"featured":{"image":"https://r2.fivemanage.com/Z3zAWhknDDmtLDDgDeCGn/content.png","body":"asdasdasdas","headline":"eadasdasds","summary":"asdasdasdas","author":"Rebecca Thornmill","type":"article","date":"11 Ekim 2026","id":"H0003","category":"Gündem"},"updatedAt":1789253943,"articles":[{"image":"https://r2.fivemanage.com/Z3zAWhknDDmtLDDgDeCGn/content.png","body":"asdasdasdas","headline":"eadasdasds","images":["https://r2.fivemanage.com/Z3zAWhknDDmtLDDgDeCGn/content.png"],"summary":"asdasdasdas","author":"Rebecca Thornmill","type":"article","publishedAt":1789159190,"date":"11 Ekim 2026","id":"H0003","category":"Gündem"},{"image":"","body":"Testtetetetet","headline":"Test","images":[],"summary":"Testtetetetet","author":"Rebecca Thornmill","type":"article","publishedAt":1789158603,"date":"11 Ekim 2026","id":"H0002","category":"Gündem"}],"issues":[]}
