@@ -9,7 +9,7 @@
     state.data=await r.json();
     const saved=localStorage.getItem('weazel-theme');
     document.documentElement.classList.toggle('dark',saved!=='light');
-    renderAll(); bind(); applySpotlights();
+    renderAll(); bind(); applySpotlights(); setupTicker();
   }
 
   function renderAll(){renderHome();renderNews();renderIssues();}
@@ -21,7 +21,7 @@
     const d=state.data,f=d.featured,latest=d.issues?.[0];
     const ticker=(d.articles||[]).map(a=>`<b>${esc(a.category)}</b> — ${esc(a.headline)} <i class="ticker-dot">•</i>`).join('');
     $('#homeView').innerHTML=`
-      <div class="breaking-strip glass"><span class="breaking-badge"><i></i> WEAZEL LIVE</span><div class="breaking-track"><div class="breaking-loop"><span class="breaking-copy">${ticker}</span><span class="breaking-copy" aria-hidden="true">${ticker}</span></div></div></div>
+      <div class="breaking-strip glass"><span class="breaking-badge"><i></i> WEAZEL LIVE</span><div class="breaking-track"><div class="breaking-loop"><span class="breaking-copy ticker-seed">${ticker}</span></div></div></div>
       <section class="hero">
         <article class="featured" data-featured><img src="${esc(f.image)}" alt=""><div class="featured-copy"><span class="kicker">ÖNE ÇIKAN • ${esc(f.category)}</span><h1>${esc(f.headline)}</h1><p>${esc(f.summary)}</p><div class="featured-meta"><span>${esc(f.author||'Weazel News')}</span><i></i><span>${esc(f.date||'')}</span></div></div><span class="hero-cta">${svgArrow}</span></article>
         <div class="side-stack">
@@ -66,7 +66,7 @@
     $$('.view').forEach(el=>el.classList.toggle('active',el.id===v+'View'));
     $$('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===v));
     if(push) history.replaceState({view:v},'',`#${v}`);
-    window.scrollTo({top:0,behavior:'smooth'}); setTimeout(applySpotlights,20);
+    window.scrollTo({top:0,behavior:'smooth'}); setTimeout(()=>{applySpotlights();if(v==='home')setupTicker()},20);
   }
 
   function findArticle(id){return state.data.articles.find(x=>String(x.id)===String(id));}
@@ -163,6 +163,34 @@
   function closeSearch(){const m=$('#searchModal');m.classList.remove('open');m.setAttribute('aria-hidden','true');if(!$('#articleModal').classList.contains('open')&&!$('#readerModal').classList.contains('open'))document.body.style.overflow=''}
   function renderSearch(query){const q=query.trim().toLocaleLowerCase('tr');const rows=[];(state.data.articles||[]).forEach(a=>{if(!q||`${a.headline} ${a.summary} ${a.category}`.toLocaleLowerCase('tr').includes(q))rows.push({type:'article',id:a.id,img:a.image,title:a.headline,meta:`${a.category} • ${a.date}`})});(state.data.issues||[]).forEach(i=>{if(!q||`${i.headline} ${i.summary} ${i.title}`.toLocaleLowerCase('tr').includes(q))rows.push({type:'issue',id:i.id,img:i.cover,title:i.headline,meta:`Gazete • Sayı #${i.number}`})});$('#searchResults').innerHTML=rows.length?rows.slice(0,8).map(r=>`<button class="search-result" data-search-type="${r.type}" data-search-id="${esc(r.id)}"><img src="${esc(r.img)}" alt=""><div><b>${esc(r.title)}</b><small>${esc(r.meta)}</small></div><span>↗</span></button>`).join(''):'<div class="search-empty">Sonuç bulunamadı.</div>'}
 
+  let tickerResizeTimer=null;
+  function setupTicker(){
+    const track=$('.breaking-track'),loop=$('.breaking-loop');
+    if(!track||!loop)return;
+    const seed=loop.querySelector('.ticker-seed');
+    if(!seed)return;
+    loop.querySelectorAll('.breaking-copy:not(.ticker-seed)').forEach(node=>node.remove());
+    loop.classList.remove('ticker-running');
+    loop.style.removeProperty('--ticker-shift');
+    loop.style.removeProperty('--ticker-duration');
+    requestAnimationFrame(()=>{
+      const unit=Math.ceil(seed.getBoundingClientRect().width);
+      const viewport=Math.ceil(track.getBoundingClientRect().width);
+      if(!unit||!viewport)return;
+      const copies=Math.max(2,Math.ceil((viewport+unit)/unit)+1);
+      for(let i=1;i<copies;i++){
+        const clone=seed.cloneNode(true);
+        clone.classList.remove('ticker-seed');
+        clone.setAttribute('aria-hidden','true');
+        loop.appendChild(clone);
+      }
+      loop.style.setProperty('--ticker-shift',`${unit}px`);
+      loop.style.setProperty('--ticker-duration',`${Math.max(14,unit/58).toFixed(2)}s`);
+      void loop.offsetWidth;
+      loop.classList.add('ticker-running');
+    });
+  }
+
   function applySpotlights(){
     $$('.shine-card,.featured').forEach(card=>{if(card.dataset.shineBound)return;card.dataset.shineBound='1';card.addEventListener('pointermove',e=>{const r=card.getBoundingClientRect();card.style.setProperty('--mx',`${e.clientX-r.left}px`);card.style.setProperty('--my',`${e.clientY-r.top}px`)})})
   }
@@ -182,6 +210,7 @@
     $('#searchButton').onclick=openSearch;$('#searchInput').addEventListener('input',e=>renderSearch(e.target.value));
     $('#themeButton').onclick=()=>{document.documentElement.classList.toggle('dark');localStorage.setItem('weazel-theme',document.documentElement.classList.contains('dark')?'dark':'light')};
     window.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#readerModal').classList.contains('open'))closeReader();else if($('#articleModal').classList.contains('open'))closeArticle();else if($('#searchModal').classList.contains('open'))closeSearch()}if($('#readerModal').classList.contains('open')){if(e.key==='ArrowLeft')readerPrev();if(e.key==='ArrowRight')readerNext()}});
+    window.addEventListener('resize',()=>{clearTimeout(tickerResizeTimer);tickerResizeTimer=setTimeout(()=>{if(state.view==='home')setupTicker()},120)});
     const initial=location.hash.replace('#','');if(['home','news','issues'].includes(initial))setView(initial,false);
   }
 
