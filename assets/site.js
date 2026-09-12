@@ -14,51 +14,41 @@
 
   function renderAll(){renderHome();renderNews();renderIssues();}
   function titleBlock(kicker,title){return `<div class="section-title"><small>${esc(kicker)}</small><h2>${esc(title)}</h2></div>`}
-  function articleCard(a){return `<article class="news-card shine-card" data-article="${esc(a.id)}"><div class="news-card-media"><img src="${esc(a.image)}" alt=""><span class="card-arrow">${svgArrow}</span></div><div class="news-card-copy"><span class="kicker">${esc(a.category)}</span><h3>${esc(a.headline)}</h3><p>${esc(a.summary||'')}</p><div class="card-meta"><span>${esc(a.author||'Weazel News')}</span><span>${esc(a.date||'')}</span></div></div></article>`}
-  function issueCard(i){return `<article class="issue-card shine-card" data-issue="${esc(i.id)}"><img src="${esc(i.cover)}" alt=""><div class="issue-copy"><span class="kicker">SAYI #${esc(i.number)}</span><h3>${esc(i.headline)}</h3><p>${esc(i.summary||'')}</p><small>${esc(i.date)} • ${(i.pages||[]).length} sayfa</small></div></article>`}
+  function mediaBlock(src,cls=''){return src?`<img class="${cls}" src="${esc(src)}" alt="">`:`<div class="media-fallback ${cls}"><span>W</span><small>WEAZEL NEWS</small></div>`}
+  function articleCard(a){return `<article class="news-card shine-card" data-article="${esc(a.id)}"><div class="news-card-media">${mediaBlock(a.image)}<span class="card-arrow">${svgArrow}</span></div><div class="news-card-copy"><span class="kicker">${esc(a.category)}</span><h3>${esc(a.headline)}</h3><p>${esc(a.summary||'')}</p><div class="card-meta"><span>${esc(a.author||'Weazel News')}</span><span>${esc(a.date||'')}</span></div></div></article>`}
+  function issueCard(i){return `<article class="issue-card shine-card" data-issue="${esc(i.id)}">${mediaBlock(i.cover)}<div class="issue-copy"><span class="kicker">SAYI #${esc(i.number)}</span><h3>${esc(i.headline)}</h3><p>${esc(i.summary||'')}</p><small>${esc(i.date)} • ${(i.pages||[]).length} sayfa</small></div></article>`}
 
   function renderHome(){
-    const d=state.data,f=d.featured,latest=d.issues?.[0];
-    const ticker=(d.articles||[]).map(a=>`<b>${esc(a.category)}</b> — ${esc(a.headline)} <i class="ticker-dot">•</i>`).join('');
+    const d=state.data||{},f=d.featured||null,latest=d.issues?.[0]||null;
+    const tickerItems=(d.articles||[]).map(a=>`<b>${esc(a.category)}</b> — ${esc(a.headline)} <i class="ticker-dot">•</i>`);
+    if(latest) tickerItems.push(`<b>SON GAZETE</b> — ${esc(latest.headline)} <i class="ticker-dot">•</i>`);
+    if(!tickerItems.length) tickerItems.push('<b>WEAZEL NEWS</b> — Los Santos yayın hattı hazır. İlk yayın bekleniyor. <i class="ticker-dot">•</i>');
+    const ticker=tickerItems.join('');
+    const featured=f?`<article class="featured" data-featured data-featured-type="${esc(f.type||'article')}" data-featured-id="${esc(f.id||f.issueId||'')}">${mediaBlock(f.image)}<div class="featured-copy"><span class="kicker">ÖNE ÇIKAN • ${esc(f.category||'WEAZEL NEWS')}</span><h1>${esc(f.headline||'')}</h1><p>${esc(f.summary||'')}</p><div class="featured-meta"><span>${esc(f.author||'Weazel News')}</span><i></i><span>${esc(f.date||'')}</span></div></div><span class="hero-cta">${svgArrow}</span></article>`:`<article class="featured featured-empty glass"><div class="featured-empty-mark">W</div><div class="featured-copy"><span class="kicker">YAYIN MASASI</span><h1>Şimdilik sessiz. Bu uzun sürmez.</h1><p>Oyundan son onayı alan ilk haber veya gazete burada öne çıkacak.</p></div></article>`;
     $('#homeView').innerHTML=`
       <div class="breaking-strip glass"><span class="breaking-badge"><i></i> WEAZEL LIVE</span><div class="breaking-track"><div class="breaking-loop"><span class="breaking-copy ticker-seed">${ticker}</span></div></div></div>
       <section class="hero">
-        <article class="featured" data-featured><img src="${esc(f.image)}" alt=""><div class="featured-copy"><span class="kicker">ÖNE ÇIKAN • ${esc(f.category)}</span><h1>${esc(f.headline)}</h1><p>${esc(f.summary)}</p><div class="featured-meta"><span>${esc(f.author||'Weazel News')}</span><i></i><span>${esc(f.date||'')}</span></div></div><span class="hero-cta">${svgArrow}</span></article>
+        ${featured}
         <div class="side-stack">
-          ${latest?`<article class="latest-issue" data-issue="${esc(latest.id)}"><img src="${esc(latest.cover)}" alt=""><span class="issue-number">#${esc(latest.number)}</span><div class="latest-issue-copy"><span class="kicker">SON GAZETE</span><h2>${esc(latest.headline)}</h2><small>${esc(latest.date)} • ${latest.pages.length} sayfa</small></div></article>`:''}
-          <section class="pulse-card glass shine-card"><div class="pulse-head"><span>WEAZEL DESK</span><span class="live-pill"><i></i> CANLI</span></div><h3>Şehrin sesi, tek merkezde.</h3><p>Haberler, özel dosyalar ve Weazel gazete arşivi. Oyun içinden yayınlanan içerikler burada otomatik olarak arşivlenecek.</p><div class="pulse-stats"><div><b>${d.articles.length}</b><span>Haber</span></div><div><b>${d.issues.length}</b><span>Sayı</span></div><div><b>${d.issues.reduce((n,x)=>n+(x.pages?.length||0),0)}</b><span>Sayfa</span></div></div></section>
+          ${latest?`<article class="latest-issue" data-issue="${esc(latest.id)}">${mediaBlock(latest.cover)}<span class="issue-number">#${esc(latest.number)}</span><div class="latest-issue-copy"><span class="kicker">SON GAZETE</span><h2>${esc(latest.headline)}</h2><small>${esc(latest.date)} • ${(latest.pages||[]).length} sayfa</small></div></article>`:`<section class="latest-issue latest-issue-empty glass"><div><span class="kicker">SON GAZETE</span><h2>Matbaa sessiz.</h2><small>İlk sayı yayınlandığında burada görünecek.</small></div></section>`}
+          <section class="pulse-card glass shine-card"><div class="pulse-head"><span>WEAZEL DESK</span><span class="live-pill"><i></i> CANLI</span></div><h3>Şehrin sesi, tek merkezde.</h3><p>Haberler, özel dosyalar ve Weazel gazete arşivi. Oyun içinden yayınlanan içerikler burada otomatik olarak arşivlenir.</p><div class="pulse-stats"><div><b>${(d.articles||[]).length}</b><span>Haber</span></div><div><b>${(d.issues||[]).length}</b><span>Sayı</span></div><div><b>${(d.issues||[]).reduce((n,x)=>n+(x.pages?.length||0),0)}</b><span>Sayfa</span></div></div></section>
         </div>
       </section>
-      <div class="section-head">${titleBlock('WEAZEL DESK','Son Haberler')}<span>${d.articles.length} yayın</span></div>
-      <section class="news-grid">${d.articles.slice(0,5).map(articleCard).join('')}</section>
+      <div class="section-head">${titleBlock('WEAZEL DESK','Son Haberler')}<span>${(d.articles||[]).length} yayın</span></div>
+      <section class="news-grid">${(d.articles||[]).length?d.articles.slice(0,5).map(articleCard).join(''):`<div class="empty-feed glass"><b>Henüz yayın yok.</b><span>Weazel çalışanları oyundan yayınladığında burası otomatik dolacak.</span></div>`}</section>
       <section class="weazel-chaos glass">
-        <div class="chaos-copy">
-          <span class="kicker">WEAZEL EDİTORYAL STANDARTLARI™</span>
-          <h2>Haberi kontrol ettik. <em>Sayılır.</em></h2>
-          <p>Los Santos’ta gerçekler hızlıdır, Weazel daha hızlı. Panik yaratmadan haber yapıyoruz; panik kendi kendine oluşursa sorumluluk kabul etmiyoruz.</p>
-          <div class="chaos-quote">“Önce yayına gir. Sonra ‘kaynak kimdi?’ diye sorarız.” <span>— gece vardiyası, muhtemelen</span></div>
-        </div>
-        <div class="chaos-meter">
-          <div class="meter-top"><span>BUGÜNÜN YAYIN KARIŞIMI</span><b>WEAZEL ÖLÇER</b></div>
-          <div class="meter-bar"><i style="--w:91%"></i></div>
-          <div class="meter-legend"><span><b>91%</b> Drama</span><span><b>8%</b> Kahve</span><span><b>1%</b> Hukuki risk</span></div>
-          <div class="chaos-grid">
-            <div><small>KAYNAK</small><b>“Bize öyle dendi.”</b></div>
-            <div><small>ACİLİYET</small><b>Sireni duyduysak son dakika.</b></div>
-            <div><small>DÜZELTME</small><b>Gerekirse yarın daha büyük başlıkla.</b></div>
-          </div>
-        </div>
+        <div class="chaos-copy"><span class="kicker">WEAZEL EDİTORYAL STANDARTLARI™</span><h2>Haberi kontrol ettik. <em>Sayılır.</em></h2><p>Los Santos’ta gerçekler hızlıdır, Weazel daha hızlı. Panik yaratmadan haber yapıyoruz; panik kendi kendine oluşursa sorumluluk kabul etmiyoruz.</p><div class="chaos-quote">“Önce yayına gir. Sonra ‘kaynak kimdi?’ diye sorarız.” <span>— gece vardiyası, muhtemelen</span></div></div>
+        <div class="chaos-meter"><div class="meter-top"><span>BUGÜNÜN YAYIN KARIŞIMI</span><b>WEAZEL ÖLÇER</b></div><div class="meter-bar"><i style="--w:91%"></i></div><div class="meter-legend"><span><b>91%</b> Drama</span><span><b>8%</b> Kahve</span><span><b>1%</b> Hukuki risk</span></div><div class="chaos-grid"><div><small>KAYNAK</small><b>“Bize öyle dendi.”</b></div><div><small>ACİLİYET</small><b>Sireni duyduysak son dakika.</b></div><div><small>DÜZELTME</small><b>Gerekirse yarın daha büyük başlıkla.</b></div></div></div>
       </section>`;
   }
-
   function renderNews(){
     const d=state.data;
-    $('#newsView').innerHTML=`<div class="page-heading"><div><span class="kicker">WEAZEL NEWSROOM</span><h1>Haberler</h1></div><p>Los Santos’un gündemi, özel dosyaları ve sahadan gelen son gelişmeler. Weazel yayın masasında ne varsa burada.</p></div><section class="news-grid">${d.articles.map(articleCard).join('')}</section>`;
+    $('#newsView').innerHTML=`<div class="page-heading"><div><span class="kicker">WEAZEL NEWSROOM</span><h1>Haberler</h1></div><p>Los Santos’un gündemi, özel dosyaları ve sahadan gelen son gelişmeler. Weazel yayın masasında ne varsa burada.</p></div><section class="news-grid">${d.articles.length?d.articles.map(articleCard).join(''):`<div class="empty-feed glass"><b>Haber masası henüz boş.</b><span>İlk onaylı haber doğrudan burada görünecek.</span></div>`}</section>`;
   }
 
   function renderIssues(){
     const d=state.data,latest=d.issues?.[0];
-    $('#issuesView').innerHTML=`<div class="page-heading"><div><span class="kicker">WEAZEL ARCHIVE</span><h1>Gazete Arşivi</h1></div><p>Weazel’in yayımlanan bütün gazete sayıları. Kapağı seç, alttaki oklarla gazeteyi çevir ve sayfalar arasında gez.</p></div>${latest?`<section class="issues-featured"><div class="issues-featured-cover"><img src="${esc(latest.cover)}" alt=""><div class="issues-featured-number"><small>SON SAYI</small><b>#${esc(latest.number)}</b></div></div><div class="issues-featured-copy"><span class="kicker">${esc(latest.title||'WEAZEL GAZETE')}</span><h1>${esc(latest.headline)}</h1><p>${esc(latest.summary||'')}</p><div class="issue-actions"><button class="primary-btn" data-issue="${esc(latest.id)}">Gazeteyi Oku ${svgArrow}</button><button class="secondary-btn" data-nav="home">Ana Sayfaya Dön</button></div></div></section>`:''}<div class="section-head">${titleBlock('TÜM SAYILAR','Arşiv')}<span>${d.issues.length} sayı</span></div><section class="issues-grid">${d.issues.map(issueCard).join('')}</section>`;
+    $('#issuesView').innerHTML=`<div class="page-heading"><div><span class="kicker">WEAZEL ARCHIVE</span><h1>Gazete Arşivi</h1></div><p>Weazel’in yayımlanan bütün gazete sayıları. Kapağı seç, alttaki oklarla gazeteyi çevir ve sayfalar arasında gez.</p></div>${latest?`<section class="issues-featured"><div class="issues-featured-cover"><img src="${esc(latest.cover)}" alt=""><div class="issues-featured-number"><small>SON SAYI</small><b>#${esc(latest.number)}</b></div></div><div class="issues-featured-copy"><span class="kicker">${esc(latest.title||'WEAZEL GAZETE')}</span><h1>${esc(latest.headline)}</h1><p>${esc(latest.summary||'')}</p><div class="issue-actions"><button class="primary-btn" data-issue="${esc(latest.id)}">Gazeteyi Oku ${svgArrow}</button><button class="secondary-btn" data-nav="home">Ana Sayfaya Dön</button></div></div></section>`:''}<div class="section-head">${titleBlock('TÜM SAYILAR','Arşiv')}<span>${d.issues.length} sayı</span></div><section class="issues-grid">${d.issues.length?d.issues.map(issueCard).join(''):`<div class="empty-feed glass"><b>Arşiv henüz boş.</b><span>İlk gazete sayısı yayınlanınca otomatik olarak burada arşivlenecek.</span></div>`}</section>`;
   }
 
   function setView(v,push=true){
@@ -72,8 +62,11 @@
   function findArticle(id){return state.data.articles.find(x=>String(x.id)===String(id));}
   function openArticle(articleOrId){
     let a=typeof articleOrId==='object'?articleOrId:findArticle(articleOrId); if(!a)return;
-    $('#articleModalImage').src=a.image||''; $('#articleModalCategory').textContent=a.category||'HABER'; $('#articleModalTitle').textContent=a.headline||'';
+    const hero=$('#articleModalImage'); hero.src=a.image||''; hero.style.display=a.image?'block':'none';
+    $('#articleModalCategory').textContent=a.category||'HABER'; $('#articleModalTitle').textContent=a.headline||'';
     $('#articleModalMeta').textContent=`${a.author||'Weazel News'} • ${a.date||''}`; $('#articleModalBody').textContent=a.body||a.summary||'';
+    const gallery=$('#articleModalGallery');
+    if(gallery){const imgs=Array.isArray(a.images)?a.images.filter(Boolean):[];gallery.innerHTML=imgs.slice(1).map(src=>`<img src="${esc(src)}" alt="Haber görseli" loading="lazy">`).join('');gallery.hidden=imgs.length<=1;}
     $('#articleModal').classList.add('open'); $('#articleModal').setAttribute('aria-hidden','false'); document.body.style.overflow='hidden';
   }
   function closeArticle(){const m=$('#articleModal');m.classList.remove('open');m.setAttribute('aria-hidden','true');if(!$('#readerModal').classList.contains('open')&&!$('#searchModal').classList.contains('open'))document.body.style.overflow='';}
@@ -199,7 +192,7 @@
     document.addEventListener('click',e=>{
       const nav=e.target.closest('[data-nav]');if(nav){setView(nav.dataset.nav);return}
       const art=e.target.closest('[data-article]');if(art){openArticle(art.dataset.article);return}
-      if(e.target.closest('[data-featured]')){openArticle({...state.data.featured,author:state.data.featured.author||'Weazel News',body:state.data.featured.body||state.data.featured.summary});return}
+      if(e.target.closest('[data-featured]')){const f=state.data.featured;if(!f)return;if(f.type==='issue')openIssue(f.issueId||f.id);else openArticle({...f,author:f.author||'Weazel News',body:f.body||f.summary});return}
       const issue=e.target.closest('[data-issue]');if(issue){openIssue(issue.dataset.issue);return}
       const close=e.target.closest('[data-close]');if(close){close.dataset.close==='article'?closeArticle():closeSearch();return}
       const result=e.target.closest('[data-search-type]');if(result){const t=result.dataset.searchType,id=result.dataset.searchId;closeSearch();setTimeout(()=>t==='issue'?openIssue(id):openArticle(id),80)}
