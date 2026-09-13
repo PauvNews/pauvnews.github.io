@@ -4,12 +4,42 @@
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const svgArrow='<svg viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>';
 
+  const LIVE_CONTENT_URL='https://raw.githubusercontent.com/PauvNews/pauvnews.github.io/main/data/content.json';
+  let liveSignature='';
+
+  async function fetchLiveContent(){
+    const liveUrl=LIVE_CONTENT_URL+(LIVE_CONTENT_URL.includes('?')?'&':'?')+'vf='+Date.now();
+    try{
+      const r=await fetch(liveUrl,{cache:'no-store',headers:{'Accept':'application/json'}});
+      if(r.ok)return await r.json();
+    }catch(e){console.warn('Weazel live data fallback:',e)}
+    const local=await fetch('data/content.json?v='+Date.now(),{cache:'no-store'});
+    if(!local.ok)throw new Error('content.json yüklenemedi');
+    return await local.json();
+  }
+
+  function dataSignature(data){
+    try{return JSON.stringify(data)}catch{return String(Date.now())}
+  }
+
+  async function refreshLiveContent(){
+    if(document.hidden)return;
+    try{
+      const next=await fetchLiveContent();
+      const sig=dataSignature(next);
+      if(sig===liveSignature)return;
+      liveSignature=sig; state.data=next;
+      renderAll(); applySpotlights(); if(state.view==='home')setupTicker();
+    }catch(e){console.warn('Weazel live refresh:',e)}
+  }
+
   async function boot(){
-    const r=await fetch('data/content.json',{cache:'no-store'}); if(!r.ok) throw new Error('content.json yüklenemedi');
-    state.data=await r.json();
+    state.data=await fetchLiveContent();
+    liveSignature=dataSignature(state.data);
     const saved=localStorage.getItem('weazel-theme');
     document.documentElement.classList.toggle('dark',saved!=='light');
     renderAll(); bind(); applySpotlights(); setupTicker(); handleDeepLink();
+    setInterval(refreshLiveContent,6000);
   }
 
   function renderAll(){renderHome();renderNews();renderIssues();}
